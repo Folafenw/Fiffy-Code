@@ -22,6 +22,9 @@ const TS = 32;
 // Raw JSON data (from levels.json).
 let levelsData;
 
+// Preloaded images from Assets/
+let images = {};
+
 // Array of Level instances.
 let levels = [];
 
@@ -55,6 +58,31 @@ function preload() {
   if (levelsData.extraGrid) {
     Level.extraGrid = levelsData.extraGrid;
   }
+
+  // Preload all images from the Assets/ folder.
+  // Listed explicitly because browsers can't read directories at runtime.
+  const assetFiles = [
+    "Cornstarch.png",
+    "Icecream.png",
+    "Pasta.png",
+    "Product 1.png",
+    "Product 10.png",
+    "Product 11.png",
+    "Product 13.png",
+    "Product 14.png",
+    "Product 2.png",
+    "Product 3.png",
+    "Product 4.png",
+    "Product 5.png",
+    "Product 6.png",
+    "Product 7.png",
+    "Product 8.png",
+    "Product 9.png",
+  ];
+
+  assetFiles.forEach((fname) => {
+    images[fname] = loadImage(`Assets/${fname}`);
+  });
 }
 
 function setup() {
