@@ -25,6 +25,11 @@ let levelsData;
 // Preloaded images from Assets/
 let images = {};
 
+// Products are stored separately from Level and positioned with
+// screen pixel coordinates. Define arrays for shelf screens here.
+let shelf1Products = [];
+let shelf2Products = [];
+
 // Array of Level instances.
 let levels = [];
 
@@ -78,6 +83,8 @@ function preload() {
     "Product 7.png",
     "Product 8.png",
     "Product 9.png",
+    "Product 12.png",
+    "Product 15.png",
   ];
 
   assetFiles.forEach((fname) => {
@@ -91,6 +98,19 @@ function setup() {
   levelsData.levels is an array of 2D arrays. 
   */
   levels = levelsData.levels.map((grid) => new Level(copyGrid(grid), TS));
+
+  // Example manual pixel-based placements (commented).
+  // Edit x/y values to position images on the shelf screens.
+  // Coordinates are screen pixels (relative to `width` and `height`),
+  // not grid cells. Uncomment to enable.
+  // Shelf 1 (top shelf screen):
+  shelf1Products.push({ name: 'Cornstarch', imageName: 'Cornstarch.png', x: 400, y: 300, w:80, h:100 });
+  shelf1Products.push({ name: 'Product 1', imageName: 'Product 1.png', x: width * 0.5, y: height * 0.25 });
+  shelf1Products.push({ name: 'Product 2', imageName: 'Product 2.png', x: width * 0.75, y: height * 0.25 });
+  // Shelf 2 (bottom shelf screen):
+  // shelf2Products.push({ name: 'Pasta', imageName: 'Pasta.png', x: width * 0.33, y: height * 0.65 });
+  // shelf2Products.push({ name: 'Product 3', imageName: 'Product 3.png', x: width * 0.5, y: height * 0.65 });
+  // shelf2Products.push({ name: 'Product 4', imageName: 'Product 4.png', x: width * 0.67, y: height * 0.65 });
 
   // Create a player.
   player = new Player(TS);
@@ -138,6 +158,14 @@ function draw() {
     text(mainScreenText, width / 2, height / 2);
     textSize(14);
     textAlign(LEFT, BASELINE);
+  }
+
+  // Draw shelf products when shelf screens are active.
+  if (hidePlayer && !inExtraLevel) {
+    drawShelfProducts(1);
+  } else if (inExtraLevel) {
+    // extra level acts as shelf 2 view
+    drawShelfProducts(2);
   }
 
   drawHUD();
@@ -279,4 +307,32 @@ function copyGrid(grid) {
   - And we don’t want to accidentally mutate the raw JSON data object. 
   */
   return grid.map((row) => row.slice());
+}
+
+// Draw product images for a given shelf screen (1 or 2).
+// Products use pixel coordinates so you can place them freely.
+function drawShelfProducts(shelfNumber) {
+  const list = shelfNumber === 1 ? shelf1Products : shelf2Products;
+  if (!list || list.length === 0) return;
+
+  // Draw using screen pixel coordinates. Use `image()` directly
+  // so images are not scaled by tileSize — caller provides sizes.
+  push();
+  imageMode(CENTER);
+  for (const p of list) {
+    const img = images[p.imageName];
+    const x = p.x;
+    const y = p.y;
+    if (img) {
+      // If the product object specifies width/height, respect it.
+      if (p.w && p.h) image(img, x, y, p.w, p.h);
+      else image(img, x, y);
+    } else {
+      // fallback marker when image missing
+      fill(180);
+      rectMode(CENTER);
+      rect(x, y, p.w || 40, p.h || 40);
+    }
+  }
+  pop();
 }
