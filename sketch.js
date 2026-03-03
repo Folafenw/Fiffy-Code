@@ -25,6 +25,7 @@ let levelsData;
 // Preloaded images from Assets/
 let images = {};
 
+
 // Products are stored separately from Level and positioned with
 // screen pixel coordinates. Define arrays for shelf screens here.
 let shelf1Products = [];
@@ -36,6 +37,11 @@ let hintCount = 0;
 const HINT_LIMIT = 2;
 let hintButton = null;
 let hintTimer = null;
+// Sounds and win state
+let correctSound = null;
+let incorrectSound = null;
+let correctClicked = new Set();
+let winShown = false;
 
 // Array of Level instances.
 let levels = [];
@@ -92,11 +98,16 @@ function preload() {
     "Product 9.png",
     "Product 12.png",
     "Product 15.png",
+    "Win Screen.png",
   ];
 
   assetFiles.forEach((fname) => {
     images[fname] = loadImage(`Assets/${fname}`);
   });
+
+  // Load simple audio using browser Audio objects (no p5.sound required)
+  correctSound = new Audio('Assets/Correct.mp3');
+  incorrectSound = new Audio('Assets/Incorrect.mp3');
 }
 
 function setup() {
@@ -220,6 +231,21 @@ function draw() {
   }
 
   drawHUD();
+
+  // Draw win screen image on top when player has won
+  if (winShown) {
+    const winImg = images['Win Screen.png'];
+    if (winImg) {
+      push();
+      imageMode(CENTER);
+      // scale to fit while preserving aspect ratio
+      const iw = winImg.width || winImg.naturalWidth || 800;
+      const ih = winImg.height || winImg.naturalHeight || 600;
+      const s = Math.min(windowWidth / iw, windowHeight / ih) * 0.9;
+      image(winImg, windowWidth / 2, windowHeight / 2, iw * s, ih * s);
+      pop();
+    }
+  }
 }
 
 function drawHUD() {
@@ -235,6 +261,29 @@ function drawHUD() {
 }
 
 function keyPressed() {
+  // If win screen is shown, allow R to restart the game
+  if (winShown && (key === "r" || key === "R")) {
+    // reset game state
+    correctClicked.clear();
+    winShown = false;
+    mainScreenText = null;
+    // reset hint state
+    hintCount = 0;
+    hintActive = false;
+    if (hintTimer) {
+      clearTimeout(hintTimer);
+      hintTimer = null;
+    }
+    if (hintButton) {
+      try { hintButton.removeAttribute("disabled"); } catch (e) {}
+    }
+    // reload first level and show player
+    loadLevel(0);
+    hidePlayer = false;
+    inExtraLevel = false;
+    prevState = null;
+    return;
+  }
   // manual return key works even while moving inside extra level
   if (inExtraLevel && (key === "r" || key === "R")) {
     inExtraLevel = false;
@@ -403,4 +452,54 @@ function drawShelfProducts(shelfNumber) {
     }
   }
   pop();
+}
+
+function mousePressed() {
+  // Only allow clicking when a shelf view is active (either shelf1 or shelf2)
+  let shelfNumber = null;
+  if (hidePlayer && !inExtraLevel) shelfNumber = 1;
+  else if (inExtraLevel) shelfNumber = 2;
+  else return;
+
+  const list = shelfNumber === 1 ? shelf1Products : shelf2Products;
+  if (!list) return;
+
+  // Check each product's bounding box (imageMode CENTER)
+  for (const p of list) {
+    const w = p.w || 80;
+    const h = p.h || 110;
+    const left = p.x - w / 2;
+    const right = p.x + w / 2;
+    const top = p.y - h / 2;
+    const bottom = p.y + h / 2;
+
+    if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom) {
+      const targets = ["Cornstarch", "Pasta", "Icecream"];
+      if (targets.includes(p.name)) {
+        // If not already clicked, count it and play correct sound
+        if (!correctClicked.has(p.name)) {
+          correctClicked.add(p.name);
+          try { correctSound.currentTime = 0; } catch (e) {}
+          correctSound.play();
+        }
+      } else {
+        try { incorrectSound.currentTime = 0; } catch (e) {}
+        incorrectSound.play();
+      }
+
+      // If all three correct items clicked, show win screen once
+      if (correctClicked.size === 3 && !winShown) {
+        winShown = true;
+        mainScreenText = "You win!";
+        // Show the main screen message view
+        inExtraLevel = false;
+        hidePlayer = true;
+        // disable hint button if present
+        if (hintButton) hintButton.attribute("disabled", "true");
+      }
+
+      // Stop after first matching product
+      return;
+    }
+  }
 }
