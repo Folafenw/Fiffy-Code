@@ -30,12 +30,12 @@ let images = {};
 let shelf1Products = [];
 let shelf2Products = [];
 
-// Highlight button state
-let highlightActive = false;
-let highlightCount = 0;
-const HIGHLIGHT_LIMIT = 2;
-let highlightButton = null;
-let highlightTimer = null;
+// Hint button state
+let hintActive = false;
+let hintCount = 0;
+const HINT_LIMIT = 2;
+let hintButton = null;
+let hintTimer = null;
 
 // Array of Level instances.
 let levels = [];
@@ -143,31 +143,31 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   loadLevel(0);
   // Create a top-right button (uses CSS absolute positioning)
-  highlightButton = createButton("Highlight items");
-  highlightButton.style("position", "absolute");
-  highlightButton.style("right", "10px");
-  highlightButton.style("top", "10px");
-  highlightButton.mousePressed(() => {
-    if (highlightCount >= HIGHLIGHT_LIMIT) {
-      highlightButton.attribute("disabled", "true");
+  hintButton = createButton("Hint items");
+  hintButton.style("position", "absolute");
+  hintButton.style("right", "10px");
+  hintButton.style("top", "10px");
+  hintButton.mousePressed(() => {
+    if (hintCount >= HINT_LIMIT) {
+      hintButton.attribute("disabled", "true");
       return;
     }
-    // Activate highlight for 5 seconds per click.
-    highlightActive = true;
-    highlightCount++;
+    // Activate hint for 5 seconds per click.
+    hintActive = true;
+    hintCount++;
 
     // Clear any existing timer and start a new 5s timeout.
-    if (highlightTimer) {
-      clearTimeout(highlightTimer);
-      highlightTimer = null;
+    if (hintTimer) {
+      clearTimeout(hintTimer);
+      hintTimer = null;
     }
-    highlightTimer = setTimeout(() => {
-      highlightActive = false;
-      highlightTimer = null;
+    hintTimer = setTimeout(() => {
+      hintActive = false;
+      hintTimer = null;
     }, 5000);
 
-    if (highlightCount >= HIGHLIGHT_LIMIT) {
-      highlightButton.attribute("disabled", "true");
+    if (hintCount >= HINT_LIMIT) {
+      hintButton.attribute("disabled", "true");
     }
   });
 
@@ -385,8 +385,8 @@ function drawShelfProducts(shelfNumber) {
       rect(x, y, p.w || 40, p.h || 40);
     }
 
-    // Draw highlight stroke for specific products when active
-    if (highlightActive) {
+    // Draw hint stroke for specific products when active
+    if (hintActive) {
       const targets = ["Cornstarch", "Pasta", "Icecream"];
       if (targets.includes(p.name)) {
         push();
