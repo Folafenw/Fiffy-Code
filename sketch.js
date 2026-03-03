@@ -30,6 +30,13 @@ let images = {};
 let shelf1Products = [];
 let shelf2Products = [];
 
+// Highlight button state
+let highlightActive = false;
+let highlightCount = 0;
+const HIGHLIGHT_LIMIT = 2;
+let highlightButton = null;
+let highlightTimer = null;
+
 // Array of Level instances.
 let levels = [];
 
@@ -104,13 +111,29 @@ function setup() {
   // Coordinates are screen pixels (relative to `width` and `height`),
   // not grid cells. Uncomment to enable.
   // Shelf 1 (top shelf screen):
-  shelf1Products.push({ name: 'Cornstarch', imageName: 'Cornstarch.png', x: 400, y: 300, w:80, h:100 });
-  shelf1Products.push({ name: 'Product 1', imageName: 'Product 1.png', x: width * 0.5, y: height * 0.25 });
-  shelf1Products.push({ name: 'Product 2', imageName: 'Product 2.png', x: width * 0.75, y: height * 0.25 });
+  shelf1Products.push({ name: 'Product 3', imageName: 'Product 3.png', x: 430, y: 290, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 7', imageName: 'Product 7.png', x: 600, y: 290, w:80, h:110 });
+  shelf1Products.push({ name: 'Cornstarch', imageName: 'Cornstarch.png', x: 790, y: 290, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 9', imageName: 'Product 9.png', x: 980, y: 290, w:80, h:110 });
+
+ // Shelf 1 (bottom shelf screen):
+  shelf1Products.push({ name: 'Product 4', imageName: 'Product 4.png', x: 450, y:525, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 2', imageName: 'Product 2.png', x: 580, y: 525, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 14', imageName: 'Product 14.png', x: 710, y: 525, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 15', imageName: 'Product 15.png', x: 840, y: 525, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 13', imageName: 'Product 13.png', x: 970, y: 525, w:80, h:110 });
+  
   // Shelf 2 (bottom shelf screen):
-  // shelf2Products.push({ name: 'Pasta', imageName: 'Pasta.png', x: width * 0.33, y: height * 0.65 });
-  // shelf2Products.push({ name: 'Product 3', imageName: 'Product 3.png', x: width * 0.5, y: height * 0.65 });
-  // shelf2Products.push({ name: 'Product 4', imageName: 'Product 4.png', x: width * 0.67, y: height * 0.65 });
+  shelf2Products.push({ name: 'Pasta', imageName: 'Pasta.png', x: 430, y: 290, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 5', imageName: 'Product 5.png', x: 600, y: 290, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 12', imageName: 'Product 12.png', x: 790, y: 290, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 1', imageName: 'Product 1.png', x: 980, y: 290, w:80, h:110 });
+
+  shelf2Products.push({ name: 'Product 6', imageName: 'Product 6.png', x: 450, y: 525, w:80, h:110 });
+  shelf2Products.push({ name: 'Icecream', imageName: 'Icecream.png', x: 580, y: 525, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 10', imageName: 'Product 10.png', x: 710, y: 525, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 11', imageName: 'Product 11.png', x: 840, y: 525, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 8', imageName: 'Product 8.png', x: 970, y: 525, w:80, h:110 });
 
   // Create a player.
   player = new Player(TS);
@@ -119,6 +142,34 @@ function setup() {
   // Create a full-window canvas and then load the level.
   createCanvas(windowWidth, windowHeight);
   loadLevel(0);
+  // Create a top-right button (uses CSS absolute positioning)
+  highlightButton = createButton("Highlight items");
+  highlightButton.style("position", "absolute");
+  highlightButton.style("right", "10px");
+  highlightButton.style("top", "10px");
+  highlightButton.mousePressed(() => {
+    if (highlightCount >= HIGHLIGHT_LIMIT) {
+      highlightButton.attribute("disabled", "true");
+      return;
+    }
+    // Activate highlight for 5 seconds per click.
+    highlightActive = true;
+    highlightCount++;
+
+    // Clear any existing timer and start a new 5s timeout.
+    if (highlightTimer) {
+      clearTimeout(highlightTimer);
+      highlightTimer = null;
+    }
+    highlightTimer = setTimeout(() => {
+      highlightActive = false;
+      highlightTimer = null;
+    }, 5000);
+
+    if (highlightCount >= HIGHLIGHT_LIMIT) {
+      highlightButton.attribute("disabled", "true");
+    }
+  });
 
   noStroke();
   textFont("sans-serif");
@@ -332,6 +383,23 @@ function drawShelfProducts(shelfNumber) {
       fill(180);
       rectMode(CENTER);
       rect(x, y, p.w || 40, p.h || 40);
+    }
+
+    // Draw highlight stroke for specific products when active
+    if (highlightActive) {
+      const targets = ["Cornstarch", "Pasta", "Icecream"];
+      if (targets.includes(p.name)) {
+        push();
+        noFill();
+        stroke(0, 200, 0);
+        strokeWeight(10);
+        rectMode(CENTER);
+        // If width/height provided, use them; otherwise estimate from image
+        const rw = p.w || (p.h ? p.h * 0.75 : 80);
+        const rh = p.h || (p.w ? p.w * 1.3 : 110);
+        rect(x, y, rw + 4, rh + 4);
+        pop();
+      }
     }
   }
   pop();
