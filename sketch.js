@@ -41,7 +41,8 @@ let hintTimer = null;
 let correctSound = null;
 let incorrectSound = null;
 let correctClicked = new Set();
-let winShown = false;
+// Simple game state: 'playing', 'shelf1', 'shelf2', 'win'
+let gameState = 'playing';
 
 // Array of Level instances.
 let levels = [];
@@ -55,13 +56,8 @@ let prevState = null;
 
 // State for the special level triggered by a tile value of 4.
 // When `inExtraLevel` is true we render and move inside `extraLevel`.
-let inExtraLevel = false;
 let extraLevel = null;
 let returnState = null; // { li, r, c }
-
-// When true the player avatar is hidden and movement is blocked
-// (used on the next-level view and the extra-level view when requested).
-let hidePlayer = false;
 
 // Custom text shown on the main screen after advancing a level.
 let mainScreenText;
@@ -122,29 +118,29 @@ function setup() {
   // Coordinates are screen pixels (relative to `width` and `height`),
   // not grid cells. Uncomment to enable.
   // Shelf 1 (top shelf screen):
-  shelf1Products.push({ name: 'Product 3', imageName: 'Product 3.png', x: 430, y: 290, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 7', imageName: 'Product 7.png', x: 600, y: 290, w:80, h:110 });
-  shelf1Products.push({ name: 'Cornstarch', imageName: 'Cornstarch.png', x: 790, y: 290, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 9', imageName: 'Product 9.png', x: 980, y: 290, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 3', imageName: 'Product 3.png', x: 430, y: 280, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 7', imageName: 'Product 7.png', x: 600, y: 280, w:80, h:110 });
+  shelf1Products.push({ name: 'Cornstarch', imageName: 'Cornstarch.png', x: 790, y: 280, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 9', imageName: 'Product 9.png', x: 980, y: 280, w:80, h:110 });
 
  // Shelf 1 (bottom shelf screen):
-  shelf1Products.push({ name: 'Product 4', imageName: 'Product 4.png', x: 450, y:525, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 2', imageName: 'Product 2.png', x: 580, y: 525, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 14', imageName: 'Product 14.png', x: 710, y: 525, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 15', imageName: 'Product 15.png', x: 840, y: 525, w:80, h:110 });
-  shelf1Products.push({ name: 'Product 13', imageName: 'Product 13.png', x: 970, y: 525, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 4', imageName: 'Product 4.png', x: 450, y:505, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 2', imageName: 'Product 2.png', x: 580, y: 505, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 14', imageName: 'Product 14.png', x: 710, y: 505, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 15', imageName: 'Product 15.png', x: 840, y: 505, w:80, h:110 });
+  shelf1Products.push({ name: 'Product 13', imageName: 'Product 13.png', x: 970, y: 505, w:80, h:110 });
   
   // Shelf 2 (bottom shelf screen):
-  shelf2Products.push({ name: 'Pasta', imageName: 'Pasta.png', x: 430, y: 290, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 5', imageName: 'Product 5.png', x: 600, y: 290, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 12', imageName: 'Product 12.png', x: 790, y: 290, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 1', imageName: 'Product 1.png', x: 980, y: 290, w:80, h:110 });
+  shelf2Products.push({ name: 'Pasta', imageName: 'Pasta.png', x: 430, y: 280, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 5', imageName: 'Product 5.png', x: 600, y: 280, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 12', imageName: 'Product 12.png', x: 790, y: 280, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 1', imageName: 'Product 1.png', x: 980, y: 280, w:80, h:110 });
 
-  shelf2Products.push({ name: 'Product 6', imageName: 'Product 6.png', x: 450, y: 525, w:80, h:110 });
-  shelf2Products.push({ name: 'Icecream', imageName: 'Icecream.png', x: 580, y: 525, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 10', imageName: 'Product 10.png', x: 710, y: 525, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 11', imageName: 'Product 11.png', x: 840, y: 525, w:80, h:110 });
-  shelf2Products.push({ name: 'Product 8', imageName: 'Product 8.png', x: 970, y: 525, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 6', imageName: 'Product 6.png', x: 450, y: 505, w:80, h:110 });
+  shelf2Products.push({ name: 'Icecream', imageName: 'Icecream.png', x: 580, y: 505, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 10', imageName: 'Product 10.png', x: 710, y: 505, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 11', imageName: 'Product 11.png', x: 840, y: 505, w:80, h:110 });
+  shelf2Products.push({ name: 'Product 8', imageName: 'Product 8.png', x: 970, y: 505, w:80, h:110 });
 
   // Create a player.
   player = new Player(TS);
@@ -175,7 +171,7 @@ function setup() {
     hintTimer = setTimeout(() => {
       hintActive = false;
       hintTimer = null;
-    }, 5000);
+    }, 2000);
 
     if (hintCount >= HINT_LIMIT) {
       hintButton.attribute("disabled", "true");
@@ -189,71 +185,96 @@ function setup() {
 
 function draw() {
   background(240);
-
-  // Determine which level we should be drawing (main or extra).
-  const activeLevel = inExtraLevel ? extraLevel : levels[li];
-
-  // Draw current level then player on top, centered and scaled to fit.
-  const level = activeLevel;
-  const lw = level.pixelWidth();
-  const lh = level.pixelHeight();
-
-  // Compute uniform scale to fit the level into the window.
-  const s = Math.min(windowWidth / lw, windowHeight / lh);
-
-  // Compute top-left offset to center the scaled level.
-  const ox = (windowWidth - lw * s) / 2;
-  const oy = (windowHeight - lh * s) / 2;
-
-  push();
-  translate(ox, oy);
-  scale(s);
-  level.draw();
-  if (!hidePlayer) player.draw();
-  pop();
-
-  // if player is hidden on normal main screen, show custom message
-  if (hidePlayer && !inExtraLevel) {
-    fill(20);
-    textAlign(CENTER, CENTER);
-    textSize(36);
-    text(mainScreenText, width / 2, height / 2);
-    textSize(14);
-    textAlign(LEFT, BASELINE);
-  }
-
-  // Draw shelf products when shelf screens are active.
-  if (hidePlayer && !inExtraLevel) {
-    drawShelfProducts(1);
-  } else if (inExtraLevel) {
-    // extra level acts as shelf 2 view
-    drawShelfProducts(2);
-  }
-
-  drawHUD();
-
-  // Draw win screen image on top when player has won
-  if (winShown) {
+  // If win state, draw only the win image and return early
+  if (gameState === 'win') {
     const winImg = images['Win Screen.png'];
     if (winImg) {
       push();
       imageMode(CENTER);
-      // scale to fit while preserving aspect ratio
       const iw = winImg.width || winImg.naturalWidth || 800;
       const ih = winImg.height || winImg.naturalHeight || 600;
       const s = Math.min(windowWidth / iw, windowHeight / ih) * 0.9;
       image(winImg, windowWidth / 2, windowHeight / 2, iw * s, ih * s);
       pop();
     }
+    return;
   }
+
+  // Determine which level we should be drawing (main level always used for shelves)
+  const activeLevel = levels[li];
+
+  // Draw based only on gameState
+  if (gameState === 'playing') {
+    const level = activeLevel;
+    const lw = level.pixelWidth();
+    const lh = level.pixelHeight();
+    const s = Math.min(windowWidth / lw, windowHeight / lh);
+    const ox = (windowWidth - lw * s) / 2;
+    const oy = (windowHeight - lh * s) / 2;
+
+    push();
+    translate(ox, oy);
+    scale(s);
+    level.draw();
+    player.draw();
+    pop();
+  } else if (gameState === 'shelf1') {
+    // show the current level but hide the player and show shelf1 products
+    const level = activeLevel;
+    const lw = level.pixelWidth();
+    const lh = level.pixelHeight();
+    const s = Math.min(windowWidth / lw, windowHeight / lh);
+    const ox = (windowWidth - lw * s) / 2;
+    const oy = (windowHeight - lh * s) / 2;
+
+    push();
+    translate(ox, oy);
+    scale(s);
+    level.draw();
+    pop();
+
+    // show message and shelf 1 products
+    if (mainScreenText) {
+      fill(20);
+      textAlign(CENTER, CENTER);
+      textSize(36);
+      text(mainScreenText, width / 2, height / 2);
+      textSize(14);
+      textAlign(LEFT, BASELINE);
+    }
+    drawShelfProducts(1);
+  } else if (gameState === 'shelf2') {
+    // show the extra level view (from Level.extraGrid) and shelf2 products
+    if (!extraLevel) {
+      extraLevel = new Level(copyGrid(Level.extraGrid), TS);
+    }
+    const level = extraLevel;
+    const lw = level.pixelWidth();
+    const lh = level.pixelHeight();
+    const s = Math.min(windowWidth / lw, windowHeight / lh);
+    const ox = (windowWidth - lw * s) / 2;
+    const oy = (windowHeight - lh * s) / 2;
+
+    push();
+    translate(ox, oy);
+    scale(s);
+    level.draw();
+    pop();
+
+    drawShelfProducts(2);
+  }
+
+  drawHUD();
+
+  
 }
 
 function drawHUD() {
   // HUD: show contextual small text in the top-left.
   fill(0);
-  if (inExtraLevel) {
+  if (gameState === 'shelf2') {
     text(`Shelf 2 - click R to return`, 10, 16);
-  } else if (hidePlayer) {
+  } else if (gameState === 'shelf1') {
     text(`Shelf 1 - click R to return`, 10, 16);
   } else {
     text(`Level 1— press R to return`, 10, 16);
@@ -261,13 +282,12 @@ function drawHUD() {
 }
 
 function keyPressed() {
-  // If win screen is shown, allow R to restart the game
-  if (winShown && (key === "r" || key === "R")) {
-    // reset game state
+  // Win restart: R or Space resets game to 'playing' and resets systems
+  if (gameState === 'win' && (key === 'r' || key === 'R' || keyCode === 32)) {
     correctClicked.clear();
-    winShown = false;
+    gameState = 'playing';
     mainScreenText = null;
-    // reset hint state
+    // reset hint system
     hintCount = 0;
     hintActive = false;
     if (hintTimer) {
@@ -275,92 +295,69 @@ function keyPressed() {
       hintTimer = null;
     }
     if (hintButton) {
-      try { hintButton.removeAttribute("disabled"); } catch (e) {}
+      try { hintButton.removeAttribute && hintButton.removeAttribute('disabled'); } catch (e) {}
     }
-    // reload first level and show player
+    // reset navigation state
+    prevState = null;
+    returnState = null;
+    // reload first level and reuse player instance
     loadLevel(0);
-    hidePlayer = false;
-    inExtraLevel = false;
-    prevState = null;
+    const lvl = levels[li];
+    if (lvl && lvl.start) player.setCell(lvl.start.r, lvl.start.c);
+    else player.setCell(1, 1);
+    player.movedAt = 0;
     return;
   }
-  // manual return key works even while moving inside extra level
-  if (inExtraLevel && (key === "r" || key === "R")) {
-    inExtraLevel = false;
+
+  // Return from shelf views: R returns to previous gameplay state
+  if (gameState === 'shelf2' && (key === 'r' || key === 'R')) {
+    gameState = 'playing';
     if (returnState) {
-      li = returnState.li;
+      loadLevel(returnState.li);
       player.setCell(returnState.r, returnState.c);
+      returnState = null;
     }
-    hidePlayer = false;
     return;
   }
 
-  // return from a normal nextLevel() if we have a stored prevState
-  if (!inExtraLevel && (key === "r" || key === "R") && prevState) {
-    const ps = prevState;
-    prevState = null;
-    loadLevel(ps.li);
-    player.setCell(ps.r, ps.c);
-    hidePlayer = false;
+  if (gameState === 'shelf1' && (key === 'r' || key === 'R')) {
+    gameState = 'playing';
+    if (prevState) {
+      const ps = prevState;
+      prevState = null;
+      loadLevel(ps.li);
+      player.setCell(ps.r, ps.c);
+    }
     return;
   }
 
-  // If the player is hidden, only allow return key (handled above).
-  if (hidePlayer) return;
+  // Block movement and other keys unless playing
+  if (gameState !== 'playing') return;
 
-  /*
-  Convert key presses into a movement direction. (WASD + arrows)
-  */
+  /* Convert key presses into a movement direction. (WASD + arrows) */
   let dr = 0;
   let dc = 0;
-
-  if (keyCode === LEFT_ARROW || key === "a" || key === "A") dc = -1;
-  else if (keyCode === RIGHT_ARROW || key === "d" || key === "D") dc = 1;
-  else if (keyCode === UP_ARROW || key === "w" || key === "W") dr = -1;
-  else if (keyCode === DOWN_ARROW || key === "s" || key === "S") dr = 1;
+  if (keyCode === LEFT_ARROW || key === 'a' || key === 'A') dc = -1;
+  else if (keyCode === RIGHT_ARROW || key === 'd' || key === 'D') dc = 1;
+  else if (keyCode === UP_ARROW || key === 'w' || key === 'W') dr = -1;
+  else if (keyCode === DOWN_ARROW || key === 's' || key === 'S') dr = 1;
   else return; // not a movement key
 
-  // pick correct level for movement
-  const activeLevel = inExtraLevel ? extraLevel : levels[li];
-
-  // Try to move. If blocked, nothing happens.
+  const activeLevel = levels[li];
   const moved = player.tryMove(activeLevel, dr, dc);
+  if (!moved) return;
 
-  if (moved) {
-    const t = activeLevel.tileAt(player.r, player.c);
-
-    if (inExtraLevel) {
-      // stepping on a 3 inside the extra level returns us
-      if (t === 3) {
-        inExtraLevel = false;
-        if (returnState) {
-          li = returnState.li;
-          player.setCell(returnState.r, returnState.c);
-        }
-        hidePlayer = false;
-      }
-    } else {
-      // main-level rules
-      if (t === 3) {
-        // record current position so we can go back with R
-        prevState = { li, r: player.r, c: player.c };
-        nextLevel();
-        // hide the avatar on the next-level view until user presses R
-        hidePlayer = true;
-      } else if (t === 4) {
-        // teleport into the dedicated extra level
-        returnState = { li, r: player.r, c: player.c };
-        extraLevel = new Level(copyGrid(Level.extraGrid), TS);
-        if (extraLevel.start) {
-          player.setCell(extraLevel.start.r, extraLevel.start.c);
-        } else {
-          player.setCell(1, 1);
-        }
-        inExtraLevel = true;
-        // hide player while inside the extra level
-        hidePlayer = true;
-      }
-    }
+  const t = activeLevel.tileAt(player.r, player.c);
+  // stepping on 3: advance level and show shelf1
+  if (t === 3) {
+    prevState = { li, r: player.r, c: player.c };
+    nextLevel();
+    gameState = 'shelf1';
+  } else if (t === 4) {
+    // stepping on 4: show shelf2 (record return position)
+    returnState = { li, r: player.r, c: player.c };
+    // don't create/move into extraLevel; shelf2 is a static product view
+    gameState = 'shelf2';
   }
 }
 
@@ -457,8 +454,8 @@ function drawShelfProducts(shelfNumber) {
 function mousePressed() {
   // Only allow clicking when a shelf view is active (either shelf1 or shelf2)
   let shelfNumber = null;
-  if (hidePlayer && !inExtraLevel) shelfNumber = 1;
-  else if (inExtraLevel) shelfNumber = 2;
+  if (gameState === 'shelf1') shelfNumber = 1;
+  else if (gameState === 'shelf2') shelfNumber = 2;
   else return;
 
   const list = shelfNumber === 1 ? shelf1Products : shelf2Products;
@@ -488,14 +485,11 @@ function mousePressed() {
       }
 
       // If all three correct items clicked, show win screen once
-      if (correctClicked.size === 3 && !winShown) {
-        winShown = true;
+      if (correctClicked.size === 3 && gameState !== 'win') {
+        gameState = 'win';
         mainScreenText = "You win!";
-        // Show the main screen message view
-        inExtraLevel = false;
-        hidePlayer = true;
         // disable hint button if present
-        if (hintButton) hintButton.attribute("disabled", "true");
+        if (hintButton) try { hintButton.attribute("disabled", "true"); } catch (e) {}
       }
 
       // Stop after first matching product
